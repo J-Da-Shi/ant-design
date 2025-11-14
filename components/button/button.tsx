@@ -510,20 +510,19 @@ const InternalCompoundedButton = React.forwardRef<
   /**
    * 图标节点渲染
    * 根据加载状态和配置决定显示哪个图标
+   * 增加 map 查询，利于维护与扩展
    */
-  const iconNode =
-    // 有自定义图标且不在加载状态：显示自定义图标
-    icon && !innerLoading ? (
+  // 有一个自定义图标，但它没有处于加载状态的组件渲染
+  const iconWrapperElement = (child: React.ReactNode) => {
+    return (
       <IconWrapper prefixCls={prefixCls} className={iconClasses} style={iconStyle}>
-        {icon}
+        {child}
       </IconWrapper>
-    ) : // 加载状态且有自定义加载图标：显示自定义加载图标
-    loading && typeof loading === 'object' && loading.icon ? (
-      <IconWrapper prefixCls={prefixCls} className={iconClasses} style={iconStyle}>
-        {loading.icon}
-      </IconWrapper>
-    ) : (
-      // 默认情况：显示默认加载图标
+    );
+  };
+  // 默认渲染
+  const defaultLoadingIconElement = () => {
+    return (
       <DefaultLoadingIcon
         existIcon={!!icon}
         prefixCls={prefixCls}
@@ -531,6 +530,22 @@ const InternalCompoundedButton = React.forwardRef<
         mount={isMountRef.current}
       />
     );
+  };
+
+  const customIconNotLoading = icon && !innerLoading;
+  const customLoadingIconInLoading = loading && typeof loading === 'object' && loading.icon;
+
+  const currentState = customIconNotLoading
+    ? 'customIconNotLoading'
+    : customLoadingIconInLoading
+      ? 'customLoadingIconInLoading'
+      : 'defaultLoadingIcon';
+  const iconMap = {
+    customIconNotLoading: iconWrapperElement(icon),
+    customLoadingIconInLoading: iconWrapperElement(typeof loading === 'object' && loading.icon),
+    defaultLoadingIcon: defaultLoadingIconElement(),
+  };
+  const iconNode = iconMap[currentState];
 
   /**
    * 子元素处理
